@@ -55,7 +55,7 @@ export default function WebcamCapture() {
 
             interval = setInterval(() => {
                 captureAndSend();
-            }, 3000); // Capture every 3 seconds
+            }, 5000); // Capture every 5 seconds
         }
         enableCam();
         return () => clearInterval(interval);
