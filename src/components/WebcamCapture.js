@@ -102,7 +102,7 @@ export default function WebcamCapture() {
     return (
         <div className="flex flex-col items-center gap-4">
             <div className="relative w-[300px]">
-                <video ref={videoRef} autoPlay playsInline className="rounded shadow w-full absolute top-0 left-0 z-0" />
+                <video ref={videoRef} autoPlay playsInline className="rounded shadow w-full" />
                 <canvas
                     ref={canvasRef}
                     className="absolute top-0 left-0 w-[300px] h-auto"
@@ -122,5 +122,5 @@ export default function WebcamCapture() {
             </p>
 
         </div>
-    );""
+    );
 }
