@@ -103,12 +103,24 @@ export default function WebcamCapture() {
         <div className="flex flex-col items-center gap-4 mt-4">
             <div className="relative w-[300px]">
                 <video ref={videoRef} autoPlay playsInline className="rounded shadow w-full absolute top-0 left-0 z-0" />
-                <canvas ref={canvasRef} className="w-full h-auto absolute top-0 left-0 z-10 pointer-events-none" />
+                <canvas
+                    ref={canvasRef}
+                    className="absolute top-0 left-0 w-[300px] h-auto"
+                    style={{ pointerEvents: 'none' }}
+                />
+
             </div>
-            <button onClick={captureAndSend} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            <button
+                onClick={captureAndSend}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
                 Detect Emotion
             </button>
-            <p className="text-lg font-medium text-gray-800">Detected Emotion: {emotion}</p>
+
+            <p className="text-lg font-medium text-gray-800">
+                Detected Emotion: {emotion}
+            </p>
+
         </div>
     );""
 }
