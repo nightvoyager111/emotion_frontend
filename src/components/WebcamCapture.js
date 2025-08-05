@@ -6,21 +6,6 @@ export default function WebcamCapture() {
     const canvasRef = useRef(null);
     const [emotion, setEmotion] = useState('N/A');
     
-    useEffect(() => {
-        let interval;
-
-        async function enableCam() {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            videoRef.current.srcObject = stream;
-
-            interval = setInterval(() => {
-                CaptureAndSend();
-            }, 3000); // Capture every 3 seconds
-        }
-        enableCam();
-        return () => clearInterval(interval);
-    }, []);
-    
     const CaptureAndSend = async () => {
         const canvas = canvasRef.current;
         const video = videoRef.current;
@@ -61,6 +46,22 @@ export default function WebcamCapture() {
             }
         }, 'image/jpeg');
     };
+    useEffect(() => {
+        let interval;
+
+        async function enableCam() {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            videoRef.current.srcObject = stream;
+
+            interval = setInterval(() => {
+                CaptureAndSend();
+            }, 3000); // Capture every 3 seconds
+        }
+        enableCam();
+        return () => clearInterval(interval);
+    }, []);
+    
+    
 
     const drawOverlay = (data) => {
         const canvas = canvasRef.current;
@@ -109,5 +110,5 @@ export default function WebcamCapture() {
             </button>
             <p className="text-lg font-medium text-gray-800">Detected Emotion: {emotion}</p>
         </div>
-    );
+    );""
 }
