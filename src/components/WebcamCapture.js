@@ -6,7 +6,7 @@ export default function WebcamCapture() {
     const canvasRef = useRef(null);
     const [emotion, setEmotion] = useState('N/A');
     
-    const CaptureAndSend = async () => {
+    const captureAndSend = async () => {
         const canvas = canvasRef.current;
         const video = videoRef.current;
 
@@ -54,7 +54,7 @@ export default function WebcamCapture() {
             videoRef.current.srcObject = stream;
 
             interval = setInterval(() => {
-                CaptureAndSend();
+                captureAndSend();
             }, 3000); // Capture every 3 seconds
         }
         enableCam();
