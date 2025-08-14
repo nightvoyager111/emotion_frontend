@@ -68,9 +68,8 @@ export default function WebcamCapture() {
     canvas.height = video.videoHeight;
 
     const ctx = canvas.getContext('2d');
-    //ctx.clearRect(0, 0, canvas.width, canvas.height);
-    //ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // clear before drawing   
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.9));
     if (!blob) {
@@ -97,9 +96,7 @@ export default function WebcamCapture() {
       const data = await response.json();
       if (data.error) {
         setEmotion('No face detected');
-       const c = canvasRef.current;
-       if (c) c.getContext('2d').clearRect(0,0,c.width,c.height);
-
+        drawOverlay(null); // clear overlay frame
         return;
       }
 
@@ -128,23 +125,17 @@ export default function WebcamCapture() {
     ctx.lineWidth = 2;
     ctx.strokeRect(x, y, w, h);
 
-    ctx.font = '16px Arial';
-    const labelTextWidth = ctx.measureText(emo).width + 10;
     // Label background
-    const labelBottom = Math.max(20, y - 4);          // text baseline
-    const labelTop = labelBottom - 16;                 // background rect top
-    const labelLeft = Math.max(0, Math.min(x, canvas.width - labelTextWidth));
-
     ctx.fillStyle = 'yellow';
-    ctx.fillRect(labelLeft, labelTop, labelTextWidth, 20);
-
+    ctx.font = '16px Arial';
+    ctx.fillRect(x, y - 24, ctx.measureText(emo).width + 10, 20);
     ctx.fillStyle = 'black';
     ctx.fillText(emo, x + 5, y - 8);
 
     // Prob bars
     const labels = Object.keys(probs);
     let offsetY = 30;
-    const baseX = Math.min(canvas.width - 160, x + w + 20);
+    const baseX = x + w + 20;
 
     labels.forEach((label) => {
       const percent = Math.round(Number(probs[label]) * 100);
@@ -172,9 +163,10 @@ export default function WebcamCapture() {
 
       <div className="relative w-[500px]">
         <video ref={videoRef} autoPlay playsInline className="rounded shadow w-full" />
+        {/* Make overlay canvas follow the video size in CSS */}
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 w-full h-full"
+          className="absolute top-0 left-0 w-[500px] h-auto"
           style={{ pointerEvents: 'none' }}
         />
       </div>
