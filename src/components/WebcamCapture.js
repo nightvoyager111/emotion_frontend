@@ -29,7 +29,7 @@ export default function WebcamCapture() {
       await video.play();
 
       // Begin periodic capture (every 3s, like your original)
-      intervalRef.current = setInterval(captureAndSend, 250);
+      intervalRef.current = setInterval(captureAndSend, 2000);
       setStarted(true);
     } catch (e) {
       console.error(e);
