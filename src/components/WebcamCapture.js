@@ -1,17 +1,11 @@
 'use client';
 import { useRef, useState, useEffect } from 'react';
-const BACKEND_URL = 'https://emotion-backend-2ra4.onrender.com/predict';
-
-// send smaller images to the backend (less encode + network time)
-const SNAP_WIDTH = 320; 
-const JPEG_QUALITY = 0.7;
 
 export default function WebcamCapture() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const intervalRef = useRef(null);
   const streamRef = useRef(null);
-  const busyRef = useRef(false);
 
   const [emotion, setEmotion] = useState('N/A');
   const [started, setStarted] = useState(false);
@@ -20,16 +14,6 @@ export default function WebcamCapture() {
   const startCamera = async () => {
     try {
       setError('');
-      // Request a modest camera stream (faster encode, less browser work)
-      const constraints = {
-        video: {
-          width:  { ideal: 640, max: 640 },
-          height: { ideal: 480, max: 480 },
-          frameRate: { ideal: 24, max: 30 },
-          facingMode: 'user'
-        },
-        audio: false
-      };
       // Ask for permission on click
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       streamRef.current = stream;
@@ -74,7 +58,6 @@ export default function WebcamCapture() {
   useEffect(() => () => stopCamera(), []); // cleanup on unmount
 
   const captureAndSend = async () => {
-    if (busyRef.current) return; // prevent multiple captures
     const canvas = canvasRef.current;
     const video = videoRef.current;
     if (!video || !canvas) return;
@@ -88,16 +71,6 @@ export default function WebcamCapture() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // 2) Create a SMALL snapshot canvas for upload (downscale to SNAP_WIDTH)
-    const scale = SNAP_WIDTH / video.videoWidth;
-    const snapW = SNAP_WIDTH;
-    const snapH = Math.round(video.videoHeight * scale);
-    const snap = document.createElement('canvas');
-    snap.width = snapW;
-    snap.height = snapH;
-    const sctx = snap.getContext('2d');
-    sctx.drawImage(video, 0, 0, snapW, snapH);
-
     const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.9));
     if (!blob) {
       console.error('Blob is null, skipping submission.');
@@ -109,8 +82,10 @@ export default function WebcamCapture() {
     formData.append('file', blob, 'frame.jpg');
 
     try {
-        busyRef.current = true;
-        const response = await fetch(BACKEND_URL, { method: 'POST', body: formData });
+      const response = await fetch('https://emotion-backend-2ra4.onrender.com/predict', {
+        method: 'POST',
+        body: formData,
+      });
 
       if (!response.ok) {
         setEmotion('Network error');
@@ -126,47 +101,38 @@ export default function WebcamCapture() {
       }
 
       setEmotion(data.emotion || 'Unknown');
-      const scaleX = video.videoWidth / snapW;
-      const scaleY = video.videoHeight / snapH;
-
-      drawOverlay({
-        emotion: data.emotion,
-        probabilities: data.probabilities || {},
-        bounding_box: {
-          x: Math.round(data.bounding_box.x * scaleX),
-          y: Math.round(data.bounding_box.y * scaleY),
-          w: Math.round(data.bounding_box.w * scaleX),
-          h: Math.round(data.bounding_box.h * scaleY),
-        }
-      });
+      drawOverlay(data);
     } catch (err) {
       setEmotion('Error');
       console.error(err);
-    } finally {
-        busyRef.current = false;
-        }   
+    }
   };
 
   const drawOverlay = (data) => {
     const canvas = canvasRef.current;
+    const video = videoRef.current;
     const ctx = canvas.getContext('2d');
+
+    // If no detection, just show the video frame (already drawn)
+    if (!data || !data.bounding_box) return;
+
     const { x, y, w, h } = data.bounding_box;
     const probs = data.probabilities || {};
     const emo = (data.emotion || 'UNKNOWN').toUpperCase();
 
-    // box
+    // Draw box
     ctx.strokeStyle = 'yellow';
     ctx.lineWidth = 2;
     ctx.strokeRect(x, y, w, h);
 
-    // label
+    // Label background
     ctx.fillStyle = 'yellow';
     ctx.font = '16px Arial';
     ctx.fillRect(x, y - 24, ctx.measureText(emo).width + 10, 20);
     ctx.fillStyle = 'black';
     ctx.fillText(emo, x + 5, y - 8);
 
-    // bars
+    // Prob bars
     const labels = Object.keys(probs);
     let offsetY = 30;
     const baseX = x + w + 20;
@@ -174,10 +140,13 @@ export default function WebcamCapture() {
     labels.forEach((label) => {
       const percent = Math.round(Number(probs[label]) * 100);
       const barWidth = (percent / 100) * 120;
+
       ctx.fillStyle = 'white';
       ctx.fillText(`${label.toUpperCase()} ${percent}%`, baseX, offsetY + 10);
+
       ctx.fillStyle = 'limegreen';
       ctx.fillRect(baseX + 100, offsetY, Math.max(2, barWidth), 10);
+
       offsetY += 20;
     });
   };
@@ -197,7 +166,7 @@ export default function WebcamCapture() {
         {/* Make overlay canvas follow the video size in CSS */}
         <canvas
           ref={canvasRef}
-          className="absolute top-0 left-0 w-full h-auto"
+          className="absolute top-0 left-0 w-[500px] h-auto"
           style={{ pointerEvents: 'none' }}
         />
       </div>
